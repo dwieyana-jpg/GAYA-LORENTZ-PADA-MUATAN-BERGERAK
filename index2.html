@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Simulasi Gaya Lorentz</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #0f1220;
+    color: #e8ecff;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    overflow-x: hidden;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  h1 {
+    font-size: 16px;
+    margin: 4px 0 2px;
+    letter-spacing: 0.5px;
+    text-align: center;
+  }
+  p.sub {
+    margin: 0 0 8px;
+    color: #9aa3c7;
+    font-size: 11px;
+    text-align: center;
+    padding: 0 8px;
+    line-height: 1.4;
+  }
+
+  /* ==== Kotak pertanyaan pemandu ==== */
+  .question-box {
+    width: 100%;
+    max-width: 900px;
+    background: linear-gradient(135deg, #2a1f5c 0%, #1a2a5c 100%);
+    border: 1.5px solid rgba(120,160,255,0.55);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 20px rgba(85,128,255,0.2);
+    position: relative;
+    overflow: hidden;
+  }
+  .question-box::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #ff4d6d, #5580ff, #7dffa1);
+  }
+  .question-main {
+    font-size: 15px;
+    font-weight: bold;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+  .question-main .icon {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .question-sub {
+    font-size: 12px;
+    color: #b8c0e0;
+    line-height: 1.5;
+    padding-left: 26px;
+    font-style: italic;
+  }
+  .question-sub .arrow {
+    color: #7fb2ff;
+    font-weight: bold;
+    font-style: normal;
+    margin-right: 4px;
+  }
+
+  .canvas-wrap {
+    width: 100%;
+    max-width: 900px;
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 24px rgba(80,120,255,0.25);
+    background: #12162a;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    touch-action: none;
+    cursor: grab;
+  }
+  canvas.dragging { cursor: grabbing; }
+
+  .panel {
+    width: 100%;
+    max-width: 900px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+    background: #1a1f38;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  }
+  .panel label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: #b8c0e0;
+    font-size: 11px;
+  }
+  .panel label .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .panel input[type=range] {
+    width: 100%;
+    height: 24px;
+    -webkit-appearance: none;
+    background: transparent;
+    margin: 0;
+  }
+  .panel input[type=range]::-webkit-slider-runnable-track {
+    height: 6px; background: #2a3150; border-radius: 3px;
+  }
+  .panel input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #5580ff; border: 2px solid #fff;
+    margin-top: -8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  }
+  .panel input[type=range]::-moz-range-track {
+    height: 6px; background: #2a3150; border-radius: 3px;
+  }
+  .panel input[type=range]::-moz-range-thumb {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #5580ff; border: 2px solid #fff;
+  }
+  .val { color: #7fb2ff; font-weight: bold; }
+
+  select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1.5px solid #3a4b7a;
+    background: #232847;
+    color: #e8ecff;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237fb2ff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 14px;
+    padding-right: 32px;
+    transition: 0.2s;
+  }
+  select:focus {
+    outline: none;
+    border-color: #5580ff;
+    box-shadow: 0 0 0 3px rgba(85,128,255,0.25);
+  }
+  select option {
+    background: #232847;
+    color: #e8ecff;
+  }
+
+  .buttons {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 8px;
+    margin-top: 2px;
+  }
+  button {
+    flex: 1;
+    background: #3a6df0;
+    color: white;
+    border: none;
+    padding: 11px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: 0.15s;
+    touch-action: manipulation;
+  }
+  button:active { transform: scale(0.97); background: #5580ff; }
+  button.reset { background: #c0392b; }
+  button.reset:active { background: #e74c3c; }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    margin-top: 10px;
+    font-size: 11px;
+    color: #b8c0e0;
+    max-width: 900px;
+    width: 100%;
+    justify-content: center;
+    padding: 0 6px;
+  }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    display: inline-block; flex-shrink: 0;
+  }
+
+  .hint {
+    font-size: 11px;
+    color: #7fb2ff;
+    text-align: center;
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: rgba(85,128,255,0.12);
+    border-radius: 8px;
+    border: 1px dashed rgba(85,128,255,0.4);
+    max-width: 900px;
+  }
+
+  @media (max-width: 480px) {
+    h1 { font-size: 14px; }
+    p.sub { font-size: 10px; }
+    .question-main { font-size: 13px; }
+    .question-sub { font-size: 11px; padding-left: 22px; }
+    .panel {
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 10px;
+    }
+    .panel label { font-size: 10px; }
+    select { font-size: 11px; padding: 9px 10px; padding-right: 28px; background-size: 12px; }
+    button { padding: 12px 10px; font-size: 12px; }
+    .legend { font-size: 10px; gap: 6px 10px; }
+    .hint { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>⚡ Simulasi Gaya Lorentz</h1>
+<p class="sub">Ubah arah medan magnet & muatan → amati arah belokan lintasan (F = qv × B)</p>
+
+<!-- ==== KOTAK PERTANYAAN PEMANDU ==== -->
+<div class="question-box">
+  <div class="question-main">
+    <span class="icon">🔍</span>
+    <span>Amati bentuk lintasan muatan yang bergerak!</span>
+  </div>
+  <div class="question-sub" id="qSub">
+    <span class="arrow">▸</span>
+    <span id="qSubText">Perhatikan: bagian mana yang lurus, dan bagian mana yang melengkung?</span>
+  </div>
+</div>
+
+<div class="canvas-wrap">
+  <canvas id="cv"></canvas>
+</div>
+
+<div class="hint">💡 <b>Drag partikel</b> (tahan & geser) untuk memindahkannya — lepaskan untuk melanjutkan gerak</div>
+
+<div class="panel">
+  <label style="grid-column: span 2;">
+    <div class="row"><span>🧭 Arah Medan Magnet B</span></div>
+    <select id="selB">
+      <option value="out" selected>⊙ Keluar Layar (+z)</option>
+      <option value="in">⊗ Masuk Layar (−z)</option>
+    </select>
+  </label>
+
+  <label>
+    <div class="row"><span>Kuat Medan B</span><span class="val" id="vB">1.4</span></div>
+    <input type="range" id="sB" min="0.2" max="3" step="0.1" value="1.4">
+  </label>
+  <label>
+    <div class="row"><span>Kecepatan v</span><span class="val" id="vv">200</span></div>
+    <input type="range" id="sv" min="60" max="320" step="5" value="200">
+  </label>
+  <label>
+    <div class="row"><span>Muatan q</span><span class="val" id="vq">+1.0</span></div>
+    <input type="range" id="sq" min="-2" max="2" step="0.5" value="1">
+  </label>
+  <label>
+    <div class="row"><span>Massa m</span><span class="val" id="vm">1.0</span></div>
+    <input type="range" id="sm" min="0.5" max="3" step="0.1" value="1">
+  </label>
+
+  <div class="buttons">
+    <button id="btnPlay">⏸ Pause</button>
+    <button id="btnReset" class="reset">🔄 Reset</button>
+  </div>
+</div>
+
+<div class="legend">
+  <span><i class="dot" style="background:#ff4d6d"></i> Partikel (+)</span>
+  <span><i class="dot" style="background:#4de1ff"></i> Partikel (−)</span>
+  <span><i class="dot" style="background:#3aa8ff"></i> Gaya F</span>
+  <span><i class="dot" style="background:#7fb2ff"></i> Kecepatan v</span>
+  <span><i class="dot" style="background:#ffe066"></i> Medan B</span>
+</div>
+
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+
+const BASE_W = 900;
+const BASE_H = 520;
+
+function resizeCanvas() {
+  const wrap = cv.parentElement;
+  const displayW = wrap.clientWidth;
+  const displayH = displayW * (BASE_H / BASE_W);
+  const dpr = window.devicePixelRatio || 1;
+  cv.width  = Math.round(displayW * dpr);
+  cv.height = Math.round(displayH * dpr);
+  cv.style.width  = displayW + 'px';
+  cv.style.height = displayH + 'px';
+  const scaleX = cv.width / BASE_W;
+  const scaleY = cv.height / BASE_H;
+  ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
+}
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', function() {
+  setTimeout(resizeCanvas, 200);
+});
+
+const W = BASE_W, H = BASE_H;
+
+const field = { x: 320, y: 80, w: 340, h: 360 };
+
+let p;
+function resetParticle() {
+  const v = parseFloat(document.getElementById('sv').value);
+  const q = parseFloat(document.getElementById('sq').value);
+  const m = parseFloat(document.getElementById('sm').value);
+  p = {
+    x: 60, y: H/2,
+    vx: v, vy: 0,
+    q: q, m: m,
+    trail: [],
+    color: q >= 0 ? '#ff4d6d' : '#4de1ff',
+    dragging: false,
+    everEntered: false   // untuk tracking pertanyaan
+  };
+}
+
+function getB() { return parseFloat(document.getElementById('sB').value); }
+
+function getBDir() {
+  return document.getElementById('selB').value === 'out' ? 1 : -1;
+}
+
+let playing = true;
+
+const sB = document.getElementById('sB');
+const sv = document.getElementById('sv');
+const sq = document.getElementById('sq');
+const sm = document.getElementById('sm');
+const selB = document.getElementById('selB');
+
+sB.oninput = function() {
+  document.getElementById('vB').textContent = parseFloat(sB.value).toFixed(1);
+};
+
+sv.oninput = function() {
+  document.getElementById('vv').textContent = sv.value;
+  if (p && p.x < field.x && !p.dragging) p.vx = parseFloat(sv.value);
+};
+
+sq.oninput = function() {
+  const q = parseFloat(sq.value);
+  document.getElementById('vq').textContent = (q >= 0 ? '+' : '') + q.toFixed(1);
+  if (p) { p.q = q; p.color = q >= 0 ? '#ff4d6d' : '#4de1ff'; }
+};
+
+sm.oninput = function() {
+  document.getElementById('vm').textContent = parseFloat(sm.value).toFixed(1);
+  if (p) p.m = parseFloat(sm.value);
+};
+
+selB.onchange = function() {
+  resetParticle();
+};
+
+document.getElementById('btnPlay').onclick = function() {
+  playing = !playing;
+  this.textContent = playing ? '⏸ Pause' : '▶ Play';
+};
+
+document.getElementById('btnReset').onclick = function() {
+  resetParticle();
+};
+
+// ============ DRAG PARTIKEL ============
+const DRAG_RADIUS = 30;
+
+function getWorldPos(evt) {
+  const rect = cv.getBoundingClientRect();
+  let clientX, clientY;
+  if (evt.touches && evt.touches.length > 0) {
+    clientX = evt.touches[0].clientX;
+    clientY = evt.touches[0].clientY;
+  } else if (evt.changedTouches && evt.changedTouches.length > 0) {
+    clientX = evt.changedTouches[0].clientX;
+    clientY = evt.changedTouches[0].clientY;
+  } else {
+    clientX = evt.clientX;
+    clientY = evt.clientY;
+  }
+  const x = (clientX - rect.left) / rect.width * BASE_W;
+  const y = (clientY - rect.top)  / rect.height * BASE_H;
+  return { x, y };
+}
+
+function hitParticle(worldPos) {
+  if (!p) return false;
+  const dx = worldPos.x - p.x;
+  const dy = worldPos.y - p.y;
+  return Math.hypot(dx, dy) <= DRAG_RADIUS;
+}
+
+function onPointerDown(evt) {
+  const wp = getWorldPos(evt);
+  if (hitParticle(wp)) {
+    evt.preventDefault();
+    p.dragging = true;
+    cv.classList.add('dragging');
+    p.vx = 0;
+    p.vy = 0;
+  }
+}
+
+function onPointerMove(evt) {
+  if (!p || !p.dragging) return;
+  evt.preventDefault();
+  const wp = getWorldPos(evt);
+  p.x = wp.x;
+  p.y = wp.y;
+  p.trail.length = 0;
+}
+
+function onPointerUp(evt) {
+  if (!p || !p.dragging) return;
+  evt.preventDefault();
+  p.dragging = false;
+  cv.classList.remove('dragging');
+  const v = parseFloat(document.getElementById('sv').value);
+  p.vx = v;
+  p.vy = 0;
+}
+
+cv.addEventListener('mousedown', onPointerDown);
+window.addEventListener('mousemove', onPointerMove);
+window.addEventListener('mouseup', onPointerUp);
+
+cv.addEventListener('touchstart', onPointerDown, { passive: false });
+window.addEventListener('touchmove', onPointerMove, { passive: false });
+window.addEventListener('touchend', onPointerUp, { passive: false });
+window.addEventListener('touchcancel', onPointerUp, { passive: false });
+
+// ============ FISIKA ============
+function pointInField(x, y) {
+  return x >= field.x && x <= field.x + field.w &&
+         y >= field.y && y <= field.y + field.h;
+}
+
+function step(dt) {
+  if (p.dragging) return;
+
+  const B = getB();
+  const Bz = B * getBDir();
+
+  if (pointInField(p.x, p.y)) {
+    p.everEntered = true;
+    const ax =  p.q * p.vy * Bz / p.m;
+    const ay = -p.q * p.vx * Bz / p.m;
+    p.vx += ax * dt;
+    p.vy += ay * dt;
+  }
+  p.x += p.vx * dt;
+  p.y += p.vy * dt;
+
+  p.trail.push({x: p.x, y: p.y});
+  if (p.trail.length > 1200) p.trail.shift();
+
+  if (p.x < -100 || p.x > W + 100 || p.y < -100 || p.y > H + 100) {
+    resetParticle();
+  }
+}
+
+// ============ PERTANYAAN DINAMIS ============
+// Pertanyaan berubah mengikuti kondisi simulasi
+let lastQState = '';
+function updateQuestion() {
+  const inField = pointInField(p.x, p.y);
+  let state, text;
+
+  if (p.dragging) {
+    state = 'drag';
+    text = 'Kamu sedang memindahkan partikel. Menurutmu, apa yang akan terjadi setelah dilepas?';
+  } else if (inField && p.everEntered) {
+    const dir = getBDir();
+    const q = p.q;
+    // kombinasi arah belok
+    const arah = (q * dir) > 0 ? 'ke BAWAH' : 'ke ATAS';
+    state = 'inside';
+    text = 'Lintasan mulai melengkung. Coba perhatikan: ke arah mana partikel ini membelok? Cek apakah ' + arah + '.';
+  } else if (!inField && p.trail.length > 20 && p.everEntered) {
+    state = 'outsideAfter';
+    text = 'Setelah keluar dari medan magnet, bagaimana bentuk lintasan partikel? Mengapa demikian?';
+  } else {
+    state = 'outsideBefore';
+    text = 'Sebelum masuk medan magnet, lintasan partikel berbentuk apa? Kenapa seperti itu?';
+  }
+
+  if (state !== lastQState) {
+    lastQState = state;
+    const el = document.getElementById('qSubText');
+    el.style.opacity = '0';
+    setTimeout(() => {
+      el.textContent = text;
+      el.style.opacity = '1';
+    }, 150);
+  }
+}
+
+// ============ GAMBAR ============
+function drawFieldGrid() {
+  const dir = getBDir();
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(80,120,255,0.08)';
+  ctx.fillRect(field.x, field.y, field.w, field.h);
+  ctx.strokeStyle = 'rgba(120,160,255,0.55)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8,6]);
+  ctx.strokeRect(field.x, field.y, field.w, field.h);
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = 'rgba(200,215,255,0.9)';
+  ctx.font = 'bold 14px Segoe UI';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  const label = dir > 0
+    ? 'DAERAH MEDAN MAGNET B ⊙ (keluar layar)'
+    : 'DAERAH MEDAN MAGNET B ⊗ (masuk layar)';
+  ctx.fillText(label, field.x + 12, field.y + 24);
+
+  if (dir > 0) {
+    ctx.fillStyle = 'rgba(255,230,102,0.55)';
+    for (let gx = field.x + 40; gx < field.x + field.w; gx += 40) {
+      for (let gy = field.y + 48; gy < field.y + field.h; gy += 40) {
+        ctx.beginPath();
+        ctx.arc(gx, gy, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  } else {
+    ctx.strokeStyle = 'rgba(255,230,102,0.55)';
+    ctx.lineWidth = 2;
+    const r = 5;
+    for (let gx = field.x + 40; gx < field.x + field.w; gx += 40) {
+      for (let gy = field.y + 48; gy < field.y + field.h; gy += 40) {
+        ctx.beginPath();
+        ctx.moveTo(gx - r, gy - r); ctx.lineTo(gx + r, gy + r);
+        ctx.moveTo(gx + r, gy - r); ctx.lineTo(gx - r, gy + r);
+        ctx.stroke();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawArrow(x1, y1, x2, y2, color, width, headLen) {
+  width = width || 2.5;
+  headLen = headLen || 10;
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = width;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  const ang = Math.atan2(y2 - y1, x2 - x1);
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - headLen * Math.cos(ang - Math.PI/7), y2 - headLen * Math.sin(ang - Math.PI/7));
+  ctx.lineTo(x2 - headLen * Math.cos(ang + Math.PI/7), y2 - headLen * Math.sin(ang + Math.PI/7));
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawParticle() {
+  if (p.trail.length > 1) {
+    ctx.save();
+    ctx.strokeStyle = p.q >= 0 ? 'rgba(255,77,109,0.55)' : 'rgba(77,225,255,0.55)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(p.trail[0].x, p.trail[0].y);
+    for (let i = 1; i < p.trail.length; i++) {
+      ctx.lineTo(p.trail[i].x, p.trail[i].y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  if (p.dragging) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, DRAG_RADIUS, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  ctx.save();
+  ctx.shadowColor = p.color;
+  ctx.shadowBlur = p.dragging ? 28 : 18;
+  ctx.fillStyle = p.color;
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, p.dragging ? 10 : 8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 12px Segoe UI';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(p.q >= 0 ? '+' : '−', p.x, p.y + 0.5);
+  ctx.restore();
+
+  if (!p.dragging) {
+    const speed = Math.hypot(p.vx, p.vy);
+    if (speed > 0.001) {
+      const ux = p.vx / speed, uy = p.vy / speed;
+      drawArrow(p.x, p.y, p.x + ux * 40, p.y + uy * 40, '#7fb2ff', 2, 9);
+    }
+  }
+
+  if (pointInField(p.x, p.y) && !p.dragging) {
+    const Bz = getB() * getBDir();
+    const Fx =  p.q * p.vy * Bz;
+    const Fy = -p.q * p.vx * Bz;
+    const Fmag = Math.hypot(Fx, Fy);
+    if (Fmag > 0.001) {
+      const ux = Fx / Fmag, uy = Fy / Fmag;
+      drawArrow(p.x, p.y, p.x + ux * 44, p.y + uy * 44, '#3aa8ff', 2.5, 10);
+    }
+  }
+}
+
+function drawInfoPanel() {
+  const speed = Math.hypot(p.vx, p.vy);
+  const B = getB();
+  const inField = pointInField(p.x, p.y);
+  const F = inField ? Math.abs(p.q) * speed * B : 0;
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(20,25,50,0.85)';
+  ctx.strokeStyle = 'rgba(120,160,255,0.5)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(20, 16, 320, 136, 10);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#cfd8ff';
+  ctx.font = '13px Segoe UI';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('Kecepatan |v| : ' + speed.toFixed(0), 34, 28);
+  ctx.fillText('Gaya Lorentz |F| : ' + F.toFixed(1), 34, 48);
+  ctx.fillText('Arah B : ' + (getBDir() > 0 ? '⊙ keluar layar' : '⊗ masuk layar'), 34, 68);
+  ctx.fillText('Di medan magnet : ' + (inField ? 'YA' : 'TIDAK'), 34, 88);
+
+  if (p.dragging) {
+    ctx.fillStyle = '#ffb84d';
+    ctx.fillText('🖐 Sedang di-drag...', 34, 108);
+  } else {
+    ctx.fillStyle = inField ? '#7dffa1' : '#9aa3c7';
+    ctx.fillText(inField ? '⚠ Lintasan melengkung!' : '→ Lintasan lurus (F = 0)', 34, 108);
+  }
+  ctx.restore();
+}
+
+// ============ LOOP ============
+let lastT = performance.now();
+function loop(now) {
+  const dtReal = (now - lastT) / 1000;
+  lastT = now;
+  const dt = Math.min(dtReal, 0.033);
+
+  if (playing) {
+    const sub = 3;
+    for (let i = 0; i < sub; i++) step(dt / sub);
+  }
+
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(80,100,160,0.12)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 40) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y < H; y += 40) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  ctx.restore();
+
+  drawFieldGrid();
+  drawParticle();
+  drawInfoPanel();
+
+  updateQuestion();
+
+  requestAnimationFrame(loop);
+}
+
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    this.beginPath();
+    this.moveTo(x + r, y);
+    this.arcTo(x + w, y,     x + w, y + h, r);
+    this.arcTo(x + w, y + h, x,     y + h, r);
+    this.arcTo(x,     y + h, x,     y,     r);
+    this.arcTo(x,     y,     x + w, y,     r);
+    this.closePath();
+    return this;
+  };
+}
+
+resizeCanvas();
+resetParticle();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
